@@ -1,0 +1,9 @@
+log/
+logs/
+venv/
+__pycache__/
+*/__pycache__/
+.idea/
+.env
+.git
+.vscode

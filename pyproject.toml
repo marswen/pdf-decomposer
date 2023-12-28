@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "pdf-decomposer"
+version = "0.1.2"
+description = "Extract structured information from images, tables, and text in PDF document."
+authors = ["marswen <dongwen930910@foxmail.com>"]
+readme = "README.md"
+license = "AGPL-3.0"
+homepage = "https://github.com/marswen/pdf-decomposer"
+keywords = ["pdf", "layout", "table extraction"]
+
+[tool.poetry.dependencies]
+tqdm = "4.65.0"
+loguru = "0.7.2"
+paddleocr = "2.7.0.2"
+layoutparser = "0.3.4"
+pytesseract = "0.3.10"
+pdfservices-sdk = "2.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
