@@ -274,7 +274,7 @@ def strict_clarify(text_boxes, row_box_containment, col_box_containment):
         if i not in remain_boxes:
             row_box_containment[i, :] = row_box_containment[:, i] = 0
     best_fitness = 0
-    best_row_clusters = None
+    best_row_clusters = [remain_boxes]
     unique_row_containment = np.unique(row_box_containment.flatten())
     unique_row_containment = unique_row_containment[unique_row_containment > MIN_OVERLAP]
     for threshold in unique_row_containment:
@@ -290,7 +290,7 @@ def strict_clarify(text_boxes, row_box_containment, col_box_containment):
     return best_row_clusters, col_clusters
 
 
-def parse(text_boxes, text_recs, output_path, strict=False):
+def parse(text_boxes, text_recs, output_path, strict=True):
     row_box_containment, col_box_containment = calculate_table_box_containment(text_boxes)
     if strict:
         row_clusters, col_clusters = strict_clarify(text_boxes, row_box_containment, col_box_containment)
