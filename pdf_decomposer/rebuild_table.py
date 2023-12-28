@@ -132,9 +132,7 @@ def merge_close_column(table, text_boxes):
     return table
 
 
-def create_table(text_boxes, text_recs, row_box_containment, col_box_containment, row_threshold, col_threshold):
-    row_clusters = cluster_boxes(row_box_containment, row_threshold)
-    col_clusters = cluster_boxes(col_box_containment, col_threshold)
+def create_table(text_boxes, text_recs, row_clusters, col_clusters):
     row_clusters = sorted(row_clusters, key=lambda row_ids: min([text_boxes[x][1] for x in row_ids]))
     col_clusters = sorted(col_clusters, key=lambda col_ids: min([text_boxes[x][0] for x in col_ids]))
     cell_dict = {}
@@ -201,12 +199,11 @@ class Individual:
 def initialize_population(text_boxes, row_box_containment, col_box_containment):
     unique_row_containment = np.unique(row_box_containment.flatten())
     unique_col_containment = np.unique(col_box_containment.flatten())
-    population = []
-    for _ in range(POPULATION_SIZE):
-        genes = [random.choice(unique_row_containment[unique_row_containment > MIN_OVERLAP]),
-                 random.choice(unique_col_containment[unique_col_containment > MIN_OVERLAP])]
-        individual = Individual(text_boxes, genes, row_box_containment, col_box_containment)
-        population.append(individual)
+    unique_row_containment = unique_row_containment[unique_row_containment > MIN_OVERLAP]
+    unique_col_containment = unique_col_containment[unique_col_containment > MIN_OVERLAP]
+    row_col_containment_compos = [(r, c) for r in unique_row_containment for c in unique_col_containment]
+    candidate_genes = random.sample(row_col_containment_compos, k=min(len(row_col_containment_compos), POPULATION_SIZE))
+    population = [Individual(text_boxes, genes, row_box_containment, col_box_containment) for genes in candidate_genes]
     return population
 
 
@@ -253,8 +250,53 @@ def run_genetic_algorithm(text_boxes, row_box_containment, col_box_containment):
     return best_individual
 
 
-def parse(text_boxes, text_recs, output_path):
+def strict_clarify(text_boxes, row_box_containment, col_box_containment):
+    col_clusters = cluster_boxes(col_box_containment, 1)
+    while True:
+        col_spans = [[text_boxes[x] for x in cluster] for cluster in col_clusters]
+        lines_y1 = [min([x[0] for x in line]) for line in col_spans]
+        lines_y2 = [max([x[2] for x in line]) for line in col_spans]
+        lines = sorted([pair for pair in zip(lines_y1, lines_y2)], key=lambda x: x[0])
+        intersections = list()
+        for i in range(len(lines) - 1):
+            intersection1 = max(lines[i][0], lines[i + 1][0])
+            intersection2 = min(lines[i][1], lines[i + 1][1])
+            intersections.append(max(0, intersection2 - intersection1 + 1))
+        bad_intersections = [i for i, x in enumerate(intersections) if x > 0]
+        if len(bad_intersections) > 0:
+            bad_cols = set([x + 1 for x in bad_intersections] + bad_intersections)
+            bad_col = sorted(bad_cols, key=lambda x: len(col_spans[x]))[0]
+            col_clusters = [x for i, x in enumerate(col_clusters) if i != bad_col]
+        else:
+            break
+    remain_boxes = [i for x in col_clusters for i in x]
+    for i in range(len(row_box_containment)):
+        if i not in remain_boxes:
+            row_box_containment[i, :] = row_box_containment[:, i] = 0
+    best_fitness = 0
+    best_row_clusters = None
+    unique_row_containment = np.unique(row_box_containment.flatten())
+    unique_row_containment = unique_row_containment[unique_row_containment > MIN_OVERLAP]
+    for threshold in unique_row_containment:
+        row_clusters = cluster_boxes(row_box_containment, threshold)
+        row_clusters = [[i for i in row if i in remain_boxes] for row in row_clusters]
+        row_clusters = [row for row in row_clusters if len(row) > 0]
+        row_line_containment = calculate_line_containment(
+            [[text_boxes[x] for x in cluster] for cluster in row_clusters], axis=0)
+        fitness = 1 / row_line_containment / (len(row_clusters))
+        if fitness > best_fitness:
+            best_fitness = fitness
+            best_row_clusters = row_clusters
+    return best_row_clusters, col_clusters
+
+
+def parse(text_boxes, text_recs, output_path, strict=False):
     row_box_containment, col_box_containment = calculate_table_box_containment(text_boxes)
-    best = run_genetic_algorithm(text_boxes, row_box_containment, col_box_containment)
-    table = create_table(text_boxes, text_recs, row_box_containment, col_box_containment, best.genes[0], best.genes[1])
+    if strict:
+        row_clusters, col_clusters = strict_clarify(text_boxes, row_box_containment, col_box_containment)
+    else:
+        best = run_genetic_algorithm(text_boxes, row_box_containment, col_box_containment)
+        row_clusters = cluster_boxes(row_box_containment, best.genes[0])
+        col_clusters = cluster_boxes(col_box_containment, best.genes[1])
+    table = create_table(text_boxes, text_recs, row_clusters, col_clusters)
     table.to_excel(output_path, index=False, header=False)
