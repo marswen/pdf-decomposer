@@ -15,9 +15,9 @@ pip install paddlepaddle-gpu==2.5.2 -i https://pypi.tuna.tsinghua.edu.cn/simple
 pip install torch torchvision torchaudio -i https://download.pytorch.org/whl/cu118
 pip install 'git+https://github.com/facebookresearch/detectron2.git'
 ```
+
 Install from source code.
 ```
-pip install -r requirements.txt
 pip install .
 ```
 or
@@ -36,8 +36,8 @@ Then use PyMuPDF to parse text and organize paragraph.
 ```
 import pdf_decomposer
 
-decomposer = pdf_decomposer.PaddlePDFDecomposer(example_file, output_dir)
-decomposer()
+decomposer = pdf_decomposer.PaddlePDFDecomposer()
+decomposer(example_file, output_dir)
 ```
 
 
@@ -49,8 +49,8 @@ and then search adaptive thresholds with genetic algorithm to reconstruct tables
 ```
 import pdf_decomposer
 
-decomposer = pdf_decomposer.OpenPDFDecomposer(example_file, output_dir)
-decomposer()
+decomposer = pdf_decomposer.OpenPDFDecomposer()
+decomposer(example_file, output_dir)
 ```
 
 
@@ -68,6 +68,6 @@ export ADOBE_CLIENT_SECRET=<YOUR CLIENT SECRET>
 ```
 import pdf_decomposer
 
-decomposer = pdf_decomposer.AdobePDFDecomposer(example_file, output_dir)
-decomposer()
+decomposer = pdf_decomposer.AdobePDFDecomposer()
+decomposer(example_file, output_dir)
 ```

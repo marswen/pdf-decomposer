@@ -12,17 +12,15 @@ from abc import ABC, abstractmethod
 
 
 class PDFDecomposer(ABC):
-    def __init__(self, file_path, output_dir):
-        self.file_path = file_path
-        self.output_dir = output_dir
+    def __init__(self):
         self.temp_dir = None
 
-    def _load_file(self):
+    def _load_file(self, file_path):
         scale = 2.5
         max_length = 2000
         pages = list()
         logger.info("Loading file...")
-        with fitz.open(self.file_path) as pdf:
+        with fitz.open(file_path) as pdf:
             for page_number, page in enumerate(pdf):
                 pix = page.get_pixmap(matrix=fitz.Matrix(scale, scale))
                 if pix.width > max_length or pix.height > max_length:
@@ -33,7 +31,7 @@ class PDFDecomposer(ABC):
         return pages
 
     @abstractmethod
-    def _analyze_layout(self):
+    def _analyze_layout(self, file_path):
         pass
 
     @staticmethod
@@ -143,10 +141,10 @@ class PDFDecomposer(ABC):
                 page3.append(block3)
         return page3
 
-    def _extract_elements(self, layout_results):
+    def _extract_elements(self, file_path, layout_results):
         bound_buffer = 5
         overlap_threshold = 0.8
-        doc = fitz.Document(self.file_path)
+        doc = fitz.Document(file_path)
         structured_data = list()
         logger.info('Extracting elements...')
         for layout_page, doc_page in zip(layout_results, doc):
@@ -241,9 +239,9 @@ class PDFDecomposer(ABC):
         with open(os.path.join(self.temp_dir.name, 'structuredData.json'), 'w') as f:
             json.dump({'metadata': doc.metadata, 'elements': structured_data}, f, indent=4)
 
-    def _save_result(self):
-        output_file_name = os.path.splitext(os.path.basename(self.file_path))[0]
-        output_abs_path = os.path.abspath(os.path.join(self.output_dir, output_file_name+'.zip'))
+    def _save_result(self, file_path, output_dir):
+        output_file_name = os.path.splitext(os.path.basename(file_path))[0]
+        output_abs_path = os.path.abspath(os.path.join(output_dir, output_file_name+'.zip'))
         output_dir = os.path.dirname(output_abs_path)
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
@@ -252,8 +250,8 @@ class PDFDecomposer(ABC):
             return
         raise Exception(f"Output file {output_file_name+'.zip'} exists")
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, file_path, output_dir, *args, **kwargs):
         self.temp_dir = tempfile.TemporaryDirectory()
-        layout_results = self._analyze_layout()
-        self._extract_elements(layout_results)
-        self._save_result()
+        layout_results = self._analyze_layout(file_path)
+        self._extract_elements(file_path, layout_results)
+        self._save_result(file_path, output_dir)

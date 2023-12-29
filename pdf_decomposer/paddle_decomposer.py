@@ -8,16 +8,16 @@ from paddleocr.ppstructure.table.tablepyxl import tablepyxl
 
 
 class PaddlePDFDecomposer(PDFDecomposer):
-    def __init__(self, file_path, output_dir):
-        super().__init__(file_path, output_dir)
+    def __init__(self):
+        super().__init__()
         try:
             import paddle
         except ImportError:
             logger.error('PaddlePaddle is not installed.')
         self.table_engine = PPStructure(show_log=False)
 
-    def _analyze_layout(self):
-        pages = self._load_file()
+    def _analyze_layout(self, file_path):
+        pages = self._load_file(file_path)
         logger.info("Analyzing layout...")
         layout_results = list()
         for idx in tqdm(range(len(pages))):

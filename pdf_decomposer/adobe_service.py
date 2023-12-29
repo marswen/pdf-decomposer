@@ -24,9 +24,9 @@ from adobe.pdfservices.operation.pdfops.options.extractpdf.extract_renditions_el
 
 
 class AdobePDFDecomposer:
-    def __init__(self, file_path, output_dir):
-        self.file_path = file_path
-        self.output_dir = output_dir
+
+    def __init__(self):
+        pass
 
     @staticmethod
     def _save_result(result: FileRef, destination_file_path):
@@ -48,7 +48,7 @@ class AdobePDFDecomposer:
                 "result")
             raise AttributeError("Method save_as only allowed on operation results")
 
-    def __call__(self):
+    def __call__(self, file_path, output_dir):
         # Initial setup, create credentials instance.
         api_id = os.getenv('ADOBE_CLIENT_ID')
         api_secret = os.getenv('ADOBE_CLIENT_SECRET')
@@ -66,7 +66,7 @@ class AdobePDFDecomposer:
         extract_pdf_operation = ExtractPDFOperation.create_new()
 
         # Set operation input from a source file.
-        source = FileRef.create_from_local_file(self.file_path)
+        source = FileRef.create_from_local_file(file_path)
         extract_pdf_operation.set_input(source)
 
         # Build ExtractPDF options and set them into the operation
@@ -81,6 +81,6 @@ class AdobePDFDecomposer:
         result: FileRef = extract_pdf_operation.execute(execution_context)
 
         # Save the result to the specified location.
-        basename = os.path.basename(self.file_path)
-        result_path = os.path.join(self.output_dir, basename[:basename.rindex('.')] + '.zip')
+        basename = os.path.basename(file_path)
+        result_path = os.path.join(output_dir, basename[:basename.rindex('.')] + '.zip')
         self._save_result(result, result_path)

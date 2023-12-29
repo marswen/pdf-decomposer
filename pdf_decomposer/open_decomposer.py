@@ -9,8 +9,8 @@ from layoutparser.ocr import TesseractAgent, TesseractFeatureType
 
 
 class OpenPDFDecomposer(PDFDecomposer):
-    def __init__(self, file_path, output_dir, config_path=None, model_path=None):
-        super().__init__(file_path, output_dir)
+    def __init__(self, config_path=None, model_path=None):
+        super().__init__()
         try:
             import torch
         except ImportError:
@@ -27,13 +27,15 @@ class OpenPDFDecomposer(PDFDecomposer):
             if os.path.exists(config_path) and os.path.exists(model_path):
                 self.layout_model = Detectron2LayoutModel(config_path=config_path,
                                                           model_path=model_path, label_map=label_map)
+            else:
+                raise Exception("Detectron2 model path doesn't exist.")
         else:
             config_path = 'lp://PubLayNet/mask_rcnn_X_101_32x8d_FPN_3x/config'
             self.layout_model = Detectron2LayoutModel(config_path=config_path, label_map=label_map)
         self.ocr_agent = TesseractAgent('eng+chi_sim')
 
-    def _analyze_layout(self):
-        pages = self._load_file()
+    def _analyze_layout(self, file_path):
+        pages = self._load_file(file_path)
         logger.info("Analyzing layout...")
         layout_results = list()
         for idx in tqdm(range(len(pages))):

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pdf-decomposer"
-version = "0.2.0"
+version = "0.2.1"
 description = "Extract structured information from images, tables, and text in PDF document."
 authors = ["marswen <dongwen930910@foxmail.com>"]
 readme = "README.md"
